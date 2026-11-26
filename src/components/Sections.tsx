@@ -75,13 +75,6 @@ export function Sections({ register }: { register: Reg }) {
             ))}
           </dl>
         </div>
-        <div className="photos">
-          {(a.photos.length ? a.photos : a.photoSlots.map((s) => ({ src: "", alt: s }))).map((p, i) => (
-            <figure key={i} className={`photo photo--${i + 1}${p.src ? "" : " is-empty"}`}>
-              {p.src ? <img src={p.src} alt={p.alt} /> : <figcaption>{p.alt}</figcaption>}
-            </figure>
-          ))}
-        </div>
       </section>
 
       {/* 03 MY WORK — overview */}
@@ -236,9 +229,11 @@ export function Sections({ register }: { register: Reg }) {
               ),
             )}
           </ul>
-          <a className="cta" href={`mailto:${site.contact.email}`}>
-            {site.contact.cta}
-          </a>
+          <div className="callrow">
+            <a className="cta" href={site.contact.call}>
+              {site.contact.cta}
+            </a>
+          </div>
         </div>
         <footer className="foot">{site.contact.footer}</footer>
       </section>

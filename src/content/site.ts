@@ -111,16 +111,18 @@ export const site = {
     sports: ["Sports", "Music"],
   },
 
-  /* 07 CONTACT — phone number intentionally not published */
+  /* 07 CONTACT */
   contact: {
     kicker: "07 — Contact",
     title: "Let’s create together.",
     email: profile.email,
     links: [
       { label: "LinkedIn", href: profile.links.linkedin },
-      { label: "GitHub", href: "" }, // TODO: your GitHub URL
+      { label: "GitHub", href: "https://github.com/himankshreshtha2004-cell" },
     ],
     cta: "Say hello",
+    /** the number is only in this dial link, never shown on the page */
+    call: "tel:+918130165969",
     footer: `© ${new Date().getFullYear()} Himank Shreshtha`,
   },
 };
