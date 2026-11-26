@@ -71,6 +71,8 @@ export class FilmPlayer {
   private anchors: number[] = [];
   private plan: number[] = [];
   private planSet = new Set<number>();
+  /** decoded frames that must not be thrown away: the plan plus the frames right around the visitor */
+  private keepSet = new Set<number>();
   private maxDecoded = 24;
   private decodeW = 0; // 0 = decode at full size
   private decodeH = 0;
@@ -477,6 +479,17 @@ export class FilmPlayer {
     }
     this.plan = list;
     this.planSet = seen;
+    // the frames just ahead are left out of the plan when it's too late to decode them,
+    // but if they are already decoded they must stay: the camera is about to show them
+    const keep = new Set(seen);
+    const dir = this.dest === null ? 0 : Math.sign(this.dest - c);
+    const ahead = dir === 0 ? 3 : Math.ceil((this.moveMs() / 1000) * this.speed * 1.1) + this.stride + 3;
+    for (let k = -6; k <= ahead; k++) {
+      const i = c + (dir || 1) * k;
+      if (i >= 0 && i < N) keep.add(i);
+    }
+    if (dir === 0) for (let k = 1; k <= 6; k++) if (c - k >= 0) keep.add(c - k);
+    this.keepSet = keep;
   }
 
   /** make room: drop decoded frames outside the plan, farthest from the visitor first */
@@ -484,7 +497,7 @@ export class FilmPlayer {
     if (this.decodedCount + need <= this.maxDecoded) return true;
     const c = this.center;
     const out: number[] = [];
-    for (let i = 0; i < N; i++) if (this.bmps[i] && !this.planSet.has(i)) out.push(i);
+    for (let i = 0; i < N; i++) if (this.bmps[i] && !this.keepSet.has(i)) out.push(i);
     out.sort((a, b) => Math.abs(b - c) - Math.abs(a - c));
     for (const i of out) {
       if (this.decodedCount + need <= this.maxDecoded) break;
