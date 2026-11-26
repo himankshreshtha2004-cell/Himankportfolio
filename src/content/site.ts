@@ -107,8 +107,8 @@ export const site = {
   beyond: {
     kicker: "06 — Beyond Work",
     title: "Off the screen.",
-    line: "Tournaments won, trophies, medals and the photos behind them.",
-    sports: ["Football", "Music", "Badminton", "Table tennis"],
+    line: "Sports and music. Drag the photos around, flip them, stack them and throw them again.",
+    sports: ["Sports", "Music"],
   },
 
   /* 07 CONTACT — phone number intentionally not published */

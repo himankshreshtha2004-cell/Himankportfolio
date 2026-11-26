@@ -3,6 +3,7 @@ import { GAMES } from "../content/games";
 import { UX_PROJECTS } from "../content/uiux";
 import { FILMS } from "../content/films";
 import { ExperienceStage } from "./ExperienceStage";
+import { BeyondStage } from "./BeyondStage";
 import { EducationStats } from "./EducationStats";
 import type { StopId } from "../content/timeline";
 
@@ -207,6 +208,7 @@ export function Sections({ register }: { register: Reg }) {
             ))}
           </ul>
         </div>
+        <BeyondStage />
       </section>
 
       {/* 07 CONTACT */}
