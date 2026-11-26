@@ -40,7 +40,7 @@ export const STOPS: Stop[] = [
   { id: "games", n: "03", label: "Game Development", parent: "work", hold: [190, 194], dwell: 110, focal: 0.5 },
   { id: "uiux", n: "03", label: "UI/UX Design", parent: "work", hold: [211, 215], dwell: 110, focal: 0.5 },
   { id: "electronics", n: "03", label: "Electronics", parent: "work", hold: [232, 236], dwell: 110, focal: 0.5 },
-  { id: "experience", n: "04", label: "Experience", hold: [276, 300], dwell: 170, focal: 0.5 },
+  { id: "experience", n: "04", label: "Experience", hold: [293, 295], dwell: 170, focal: 0.5 },
   { id: "education", n: "05", label: "Education", hold: [349, 355], dwell: 130, focal: 0.5 },
   { id: "beyond", n: "06", label: "Beyond Work", hold: [388, 394], dwell: 150, focal: 0.34 },
   { id: "contact", n: "07", label: "Contact", hold: [427, 429], dwell: 100, focal: 0.42 },

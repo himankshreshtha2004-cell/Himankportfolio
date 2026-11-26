@@ -1,4 +1,9 @@
 import { site } from "../content/site";
+import { GAMES } from "../content/games";
+import { UX_PROJECTS } from "../content/uiux";
+import { FILMS } from "../content/films";
+import { ExperienceStage } from "./ExperienceStage";
+import { EducationStats } from "./EducationStats";
 import type { StopId } from "../content/timeline";
 
 type Reg = (id: StopId) => (el: HTMLElement | null) => void;
@@ -102,15 +107,23 @@ export function Sections({ register }: { register: Reg }) {
       {(["aifilm", "games", "uiux", "electronics"] as const).map((b) => (
         <section key={b} ref={register(b)} className={`layer layer--bay layer--${b}`} aria-labelledby={`${b}-title`}>
           <div className="card card--bay">
-            <p className="kicker">03 — My Work · {site.bays[b].count}</p>
+            <p className="kicker">03 — My Work · {b === "aifilm" ? `${FILMS.length} films` : b === "games" ? `${GAMES.length} games` : b === "uiux" ? `${UX_PROJECTS.length} projects` : site.bays[b].count}</p>
             <h2 id={`${b}-title`} className="title">
               {site.bays[b].title}
             </h2>
             <p className="body">{site.bays[b].text}</p>
-            <button type="button" className="enter" aria-disabled="true" title={site.enterSoon}>
-              <span>{site.enterLabel}</span>
-              <small>{site.enterSoon}</small>
-            </button>
+            {b === "aifilm" || b === "games" || b === "uiux" || b === "electronics" ? (
+              <button type="button" className="enter enter--open" data-room={b}>
+                <span>{site.enterLabel}</span>
+                <small>{b === "games" ? site.enterGames : b === "uiux" ? site.enterUiux : b === "electronics" ? site.enterElectronics : site.enterFilms}</small>
+                <i aria-hidden="true" />
+              </button>
+            ) : (
+              <button type="button" className="enter" aria-disabled="true" title={site.enterSoon}>
+                <span>{site.enterLabel}</span>
+                <small>{site.enterSoon}</small>
+              </button>
+            )}
           </div>
         </section>
       ))}
@@ -125,23 +138,58 @@ export function Sections({ register }: { register: Reg }) {
           <p className="meta">{site.experience.org}</p>
           <p className="body">{site.experience.line}</p>
         </div>
+        <ExperienceStage />
       </section>
 
       {/* 05 EDUCATION */}
       <section ref={register("education")} className="layer layer--education" aria-labelledby="edu-title">
-        <div className="card card--board">
-          <p className="kicker" id="edu-title">
-            {site.education.kicker}
-          </p>
-          <ol className="timeline">
-            {site.education.rows.map((r) => (
-              <li key={r.title}>
-                <span className="when">{r.when}</span>
-                <span className="what">{r.title}</span>
-                <span className="where">{r.place}</span>
-              </li>
-            ))}
-          </ol>
+        <div className="edu-wrap">
+          <div className="edu-pair">
+          <div className="card edu-card edu-card--left">
+            <p className="kicker" id="edu-title">
+              {site.education.kicker}
+            </p>
+            <ol className="timeline">
+              {site.education.rows.map((r) => (
+                <li key={r.title}>
+                  <span className="when">{r.when}</span>
+                  <span className="what">{r.title}</span>
+                  <span className="where">{r.place}</span>
+                </li>
+              ))}
+            </ol>
+            <p className="kicker edu-sub">{site.education.leadKicker}</p>
+            <p className="edu-lead">{site.education.leadRole}</p>
+            <p className="edu-note">{site.education.leadText}</p>
+            <p className="edu-lang">{site.education.languages.join("  ·  ")}</p>
+          </div>
+
+          <div className="card edu-card edu-card--right">
+            <p className="kicker">{site.education.skillsKicker}</p>
+            <div className="skill-groups">
+              {site.education.skills.map((g, gi) => (
+                <div className="skill-group" key={g.group} style={{ ["--i" as string]: gi }}>
+                  <h3>{g.group}</h3>
+                  <ul className="chips chips--plain">
+                    {g.items.map((it) => (
+                      <li key={it}>{it}</li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+            <p className="kicker edu-sub">{site.education.projectsKicker}</p>
+            <ul className="edu-projects">
+              {site.education.projects.map((p) => (
+                <li key={p.title}>
+                  <b>{p.title}</b>
+                </li>
+              ))}
+            </ul>
+          </div>
+          </div>
+
+          <EducationStats />
         </div>
       </section>
 

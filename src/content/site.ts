@@ -64,25 +64,43 @@ export const site = {
   },
   bays: {
     aifilm: { title: "AI Filmmaking", count: "15–20 films", text: "AI films, wedding-invitation films and generative visuals, from concept and script to the final edit." },
-    games: { title: "Game Development", count: "2 games", text: "Games built for the browser, from the first puzzle sketch to the last level." },
-    uiux: { title: "UI/UX Design", count: "4 projects", text: "Interfaces and web experiences, from layout to interaction." },
+    games: { title: "Game Development", count: "3 games", text: "Games built for the browser, from the first puzzle sketch to the last level." },
+    uiux: { title: "UI/UX Design", count: "7 projects", text: "Interfaces and web experiences, from layout to interaction." },
     electronics: { title: "Electronics", count: "2 projects", text: "An offline ESP32 smart-home controller and an ESP8266 smart-kitchen monitor." },
   } as Record<"aifilm" | "games" | "uiux" | "electronics", { title: string; count: string; text: string }>,
   enterLabel: "Step inside",
   enterSoon: "Opens in the next build step",
+  enterFilms: "Watch the films",
+  enterGames: "Play the games",
+  enterUiux: "Browse the projects",
+  enterElectronics: "Open the archive",
 
   /* 04 EXPERIENCE */
   experience: {
     kicker: "04 — Professional Experience",
     title: "Interactive exhibits.",
     org: "Technical Intern, C S Direkt Events & Exhibitions · 2026 – present",
-    line: "5–6 exhibits, each with how it works and the challenges behind it, on the projection wall.",
+    line: "Six exhibits in four cabins. Choose one and the projection wall shows it, how it works and what was hard.",
   },
 
   /* 05 EDUCATION */
   education: {
     kicker: "05 — Education",
     rows: profile.education.map((e) => ({ when: e.period, title: e.title, place: e.place })),
+    skillsKicker: "Skills",
+    skills: Object.entries(profile.skills).map(([group, text]) => ({ group, items: text.split(",").map((t) => t.trim()) })),
+    leadKicker: "Leadership",
+    leadRole: profile.leadership.role,
+    leadText: profile.leadership.text,
+    languages: profile.languages,
+    projectsKicker: "Academic builds",
+    projects: profile.projects.map((p) => ({ title: p.title.split(" — ")[0], note: p.text })),
+    stats: [
+      { value: 97, prefix: "", suffix: "%", label: "command accuracy, offline smart-home controller" },
+      { value: 21, prefix: "<", suffix: " ms", label: "command execution on an ESP32" },
+      { value: 500, prefix: "", suffix: "+", label: "attendees at SRIJAN 2025" },
+      { value: 150, prefix: "+", suffix: "%", label: "audience growth over 2024" },
+    ],
   },
 
   /* 06 BEYOND WORK */

@@ -1,15 +1,23 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FilmPlayer } from "./film/player";
 import { STOPS, buildTimeline, stopAnchor, type StopId } from "./content/timeline";
 import { Header } from "./components/Header";
 import { SideIndex } from "./components/SideIndex";
 import { Sections } from "./components/Sections";
+import { FilmRoom } from "./components/FilmRoom";
+import { GamesRoom } from "./components/GamesRoom";
+import { UiuxRoom } from "./components/UiuxRoom";
+import { ElectronicsRoom } from "./components/ElectronicsRoom";
 
 const reduced = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const clamp = (v: number, a = 0, b = 1) => Math.max(a, Math.min(b, v));
 const smooth = (t: number) => t * t * (3 - 2 * t);
 /** film speed between stops, in frames per second (the film itself runs at 24) */
 const FPS = 30;
+
+type RoomId = "aifilm" | "games" | "uiux" | "electronics";
+const ROOM_IDS: string[] = ["aifilm", "games", "uiux", "electronics"];
+const ROOM_HASH: Record<RoomId, string> = { aifilm: "#ai-films", games: "#games", uiux: "#ui-ux", electronics: "#electronics" };
 
 export default function App() {
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -18,6 +26,11 @@ export default function App() {
   const [active, setActive] = useState(0);
   const [loaded, setLoaded] = useState(0);
   const jumpRef = useRef<(to: StopId) => void>(() => {});
+  // the AI Filmmaking room ("Step inside")
+  const [room, setRoom] = useState<RoomId | null>(null);
+  const roomOpen = useRef(false);
+  const roomApi = useRef<{ close: () => void } | null>(null);
+  const openRoomRef = useRef<(which: RoomId) => void>(() => {});
 
   useEffect(() => {
     const cv = canvas.current!;
@@ -201,6 +214,16 @@ export default function App() {
     };
     raf = requestAnimationFrame(tick);
 
+    // a link straight to a room (#ai-films, #games): land on its stop and step inside
+    const deep = (Object.keys(ROOM_HASH) as RoomId[]).find((k) => ROOM_HASH[k] === location.hash) ?? null;
+    if (deep) {
+      history.replaceState(null, "", location.pathname + location.search);
+      const i = STOPS.findIndex((st) => st.id === deep);
+      window.scrollTo(0, anchorY[i] * vh());
+      shown = anchorF[i];
+      setTimeout(() => openRoomRef.current(deep), 600);
+    }
+
     jumpRef.current = (to: StopId) => {
       const i = STOPS.findIndex((s) => s.id === to);
       if (i >= 0) go(i);
@@ -220,15 +243,29 @@ export default function App() {
       !!n && (dir > 0 ? n.scrollTop + n.clientHeight < n.scrollHeight - 1 : n.scrollTop > 0);
 
     let lastWheel = 0;
+    let lastBoxWheel = -1e9;
     let lastStep = 0;
     let acc = 0;
     let armed = true;
     let prevAbs = 0;
     const onWheel = (e: WheelEvent) => {
+      if (roomOpen.current) return; // the film room handles its own input
       if (e.ctrlKey) return; // pinch zoom
       const dy = e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? window.innerHeight : 1);
-      if (canScroll(scrollBox(e.target), Math.sign(dy))) return;
+      const sb = scrollBox(e.target);
+      if (canScroll(sb, Math.sign(dy))) {
+        lastBoxWheel = e.timeStamp || performance.now();
+        return;
+      }
       e.preventDefault();
+      // a long card was just being scrolled: its end (or a reversed flick / trailing glide) must not carry the page to another section
+      if (sb) {
+        const t = e.timeStamp || performance.now();
+        if (t - lastBoxWheel < 700) {
+          lastBoxWheel = t;
+          return;
+        }
+      }
       // when the event happened (not when the page got to it), so a busy moment can't split one glide in two
       const now = e.timeStamp || performance.now();
       const abs = Math.abs(dy);
@@ -255,6 +292,7 @@ export default function App() {
     let boxTop = false;
     let boxBottom = false;
     const onTouchStart = (e: TouchEvent) => {
+      if (roomOpen.current) return; // the film room handles its own input
       touching = e.touches.length === 1;
       if (!touching) return;
       ty0 = tyLast = e.touches[0].clientY;
@@ -263,11 +301,13 @@ export default function App() {
       boxBottom = !box || box.scrollTop + box.clientHeight >= box.scrollHeight - 1;
     };
     const onTouchMove = (e: TouchEvent) => {
+      if (roomOpen.current) return; // the film room handles its own input
       if (!touching || e.touches.length !== 1) return;
       tyLast = e.touches[0].clientY;
       if (!box && e.cancelable) e.preventDefault(); // the film moves by steps, not by dragging the page
     };
     const onTouchEnd = () => {
+      if (roomOpen.current) return; // the film room handles its own input
       if (!touching) return;
       touching = false;
       const dy = ty0 - tyLast;
@@ -279,6 +319,7 @@ export default function App() {
     };
 
     const onKey = (e: KeyboardEvent) => {
+      if (roomOpen.current) return; // the film room handles its own input
       if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
       const t = e.target as HTMLElement;
       if (t.closest?.("input, textarea, select, [contenteditable]")) return;
@@ -320,6 +361,12 @@ export default function App() {
   // any element with data-to="<section>" jumps through the film to it
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
+      const r = (e.target as HTMLElement).closest<HTMLElement>("[data-room]");
+      if (r) {
+        e.preventDefault();
+        openRoomRef.current((ROOM_IDS.includes(r.dataset.room as RoomId) ? r.dataset.room : "aifilm") as RoomId);
+        return;
+      }
       const a = (e.target as HTMLElement).closest<HTMLElement>("[data-to]");
       if (!a) return;
       e.preventDefault();
@@ -328,6 +375,39 @@ export default function App() {
     document.addEventListener("click", onClick);
     return () => document.removeEventListener("click", onClick);
   }, []);
+
+  /* ---------- the film room ---------- */
+  openRoomRef.current = (which) => {
+    if (roomOpen.current) return;
+    roomOpen.current = true;
+    document.documentElement.dataset.room = which;
+    history.pushState({ room: which }, "", ROOM_HASH[which]);
+    setRoom(which);
+  };
+  // Close / Esc: go back in history, so the browser's Back button and Close do the same thing
+  const requestCloseRoom = useCallback(() => {
+    if ((history.state as { room?: string } | null)?.room) history.back();
+    else roomApi.current?.close();
+  }, []);
+  const onRoomExit = useCallback(() => {
+    roomOpen.current = false;
+    delete document.documentElement.dataset.room;
+    const was = room;
+    setRoom(null);
+    // back on the button that opened the room (once the page behind is reachable again)
+    setTimeout(() => document.querySelector<HTMLElement>(`[data-room="${was ?? "aifilm"}"]`)?.focus({ preventScroll: true, focusVisible: false } as FocusOptions), 60);
+  }, [room]);
+  useEffect(() => {
+    const onPop = () => {
+      if (roomOpen.current && !(history.state as { room?: string } | null)?.room) roomApi.current?.close();
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+  useEffect(() => {
+    // the page behind the room can't be reached by keyboard or screen reader
+    document.querySelectorAll("main, .site-header, .side-index").forEach((el) => el.toggleAttribute("inert", room !== null));
+  }, [room]);
 
   const register = (id: StopId) => (el: HTMLElement | null) => (layers.current[id] = el);
 
@@ -341,6 +421,10 @@ export default function App() {
         <Sections register={register} />
       </main>
       <div className="track" style={{ height: `calc(${total}vh + 100vh)` }} aria-hidden="true" />
+      {room === "aifilm" && <FilmRoom apiRef={roomApi} onExit={onRoomExit} onRequestClose={requestCloseRoom} />}
+      {room === "games" && <GamesRoom apiRef={roomApi} onExit={onRoomExit} onRequestClose={requestCloseRoom} />}
+      {room === "electronics" && <ElectronicsRoom apiRef={roomApi} onExit={onRoomExit} onRequestClose={requestCloseRoom} />}
+      {room === "uiux" && <UiuxRoom apiRef={roomApi} onExit={onRoomExit} onRequestClose={requestCloseRoom} />}
       <div className="loader" data-done={loaded >= STOPS[1].hold[1] ? "true" : "false"} aria-hidden="true">
         <span style={{ width: `${Math.min(100, (loaded / 430) * 100)}%` }} />
       </div>
