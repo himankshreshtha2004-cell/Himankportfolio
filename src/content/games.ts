@@ -17,7 +17,7 @@ export type Game = {
   description: string;
   /** three short facts shown as a row: [value, label] */
   facts: [string, string][];
-  /** where "Play" goes (opens in a new tab) */
+  /** the game's page: "Play" opens it inside the room (and "Open in a new tab" there) */
   url?: string;
   /** number of screenshots (s1.webp … sN.webp) */
   shots: number;
@@ -70,6 +70,7 @@ export const GAMES: Game[] = [
       ["3D", "Browser"],
       ["Puzzle", "Genre"],
     ],
+    url: `${import.meta.env.BASE_URL}games/the-curator/play/index.html`,
     shots: 3,
     focus: "50% 55%",
   },

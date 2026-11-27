@@ -423,6 +423,7 @@ html[data-room] { overflow: hidden; }
   transition: transform 0.25s var(--ease), background-color 0.25s var(--ease);
 }
 .gplay:hover { transform: translateY(-2px); background: #6bf7c3; }
+.button.gplay, button.gplay { border: 0; font-family: inherit; cursor: pointer; }
 .gplay--off { background: rgba(255, 255, 255, 0.1); color: var(--ink-m); cursor: default; }
 .gplay--off:hover { transform: none; background: rgba(255, 255, 255, 0.1); }
 .gnote { font-size: 12px; color: var(--ink-l); }
@@ -463,6 +464,21 @@ html[data-room] { overflow: hidden; }
   .gshots img { height: 84px; }
   .gnote { display: none; }
 }
+
+
+/* in-room game player */
+.gplayer { position: absolute; inset: 0; z-index: 30; display: flex; flex-direction: column; background: #070a09; animation: ghero-in 0.35s var(--ease) both; }
+.gplayer__bar { flex: 0 0 auto; display: flex; align-items: center; gap: 16px; height: 54px; padding: 0 16px; background: #0c1110; border-bottom: 1px solid rgba(255, 255, 255, 0.07); }
+.gplayer__bar strong { flex: 1 1 auto; min-width: 0; font-size: 14px; font-weight: 600; letter-spacing: 0.02em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gplayer__close { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 16px 0 10px; border: 0; border-radius: 999px; background: rgba(255, 255, 255, 0.1); color: #fff; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.gplayer__close:hover { background: rgba(255, 255, 255, 0.18); }
+.gplayer__close svg { width: 18px; height: 18px; }
+.gplayer__tab { font-size: 12px; font-weight: 600; color: var(--mint); text-decoration: none; white-space: nowrap; }
+.gplayer__tab:hover { text-decoration: underline; }
+.gplayer__stage { position: relative; flex: 1 1 auto; min-height: 0; }
+.gplayer__stage iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #070a09; }
+.gplayer__load { position: absolute; inset: 0; display: grid; place-items: center; font-size: 13px; color: var(--ink-m); }
+@media (max-width: 860px) { .gplayer__bar { gap: 8px; padding: 0 10px; } .gplayer__bar strong { display: none; } .gplayer__tab { margin-left: auto; } }
 
 /* ==========================================================================
    UI/UX ROOM — a vertical wheel of project cards on the right, the project's

@@ -21,6 +21,11 @@ const pad = (n: number) => String(n).padStart(2, "0");
 
 export function GamesRoom({ apiRef, onExit, onRequestClose }: Props) {
   const [active, setActive] = useState(0);
+  const [playing, setPlaying] = useState(false);
+  const [ready, setReady] = useState(false);
+  const playingRef = useRef(false);
+  playingRef.current = playing;
+  const frame = useRef<HTMLIFrameElement>(null);
   const panel = useRef<HTMLDivElement>(null);
   const tunnel = useRef<HTMLDivElement>(null);
   const backBtn = useRef<HTMLButtonElement>(null);
@@ -45,9 +50,23 @@ export function GamesRoom({ apiRef, onExit, onRequestClose }: Props) {
     };
   }, [apiRef, close]);
 
-  const go = useCallback((i: number) => setActive(Math.max(0, Math.min(GAMES.length - 1, i))), []);
+  const go = useCallback((i: number) => {
+    setPlaying(false);
+    setActive(Math.max(0, Math.min(GAMES.length - 1, i)));
+  }, []);
+  const play = () => {
+    setReady(false);
+    setPlaying(true);
+  };
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (playingRef.current) {
+        if (e.key === "Escape") {
+          e.preventDefault();
+          setPlaying(false);
+        }
+        return; // the game keeps the arrow keys
+      }
       if (e.key === "Escape") {
         e.preventDefault();
         onRequestClose();
@@ -117,15 +136,15 @@ export function GamesRoom({ apiRef, onExit, onRequestClose }: Props) {
               </ul>
               <div className="gact">
                 {g.url ? (
-                  <a className="gplay" href={g.url} target="_blank" rel="noopener noreferrer">
+                  <button type="button" className="gplay" onClick={play}>
                     Play
-                  </a>
+                  </button>
                 ) : (
                   <span className="gplay gplay--off" role="button" aria-disabled="true">
                     Link coming soon
                   </span>
                 )}
-                <span className="gnote">{g.url ? "Opens the game in a new tab" : "Gallery 01 is built; the public link is on its way"}</span>
+                <span className="gnote">{g.url ? "Plays right here in the room" : "Gallery 01 is built; the public link is on its way"}</span>
               </div>
               <p className="gdesc">{g.description}</p>
             </div>
@@ -152,6 +171,36 @@ export function GamesRoom({ apiRef, onExit, onRequestClose }: Props) {
             ))}
           </ul>
         </aside>
+
+        {playing && g.url && (
+          <div className="gplayer" role="dialog" aria-label={`Playing ${g.title}`}>
+            <header className="gplayer__bar">
+              <button type="button" className="gplayer__close" onClick={() => setPlaying(false)} autoFocus>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 6-6 6 6 6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                Back to the library
+              </button>
+              <strong>{g.title}</strong>
+              <a className="gplayer__tab" href={g.url} target="_blank" rel="noopener noreferrer">
+                Open in a new tab
+              </a>
+            </header>
+            <div className="gplayer__stage">
+              {!ready && <p className="gplayer__load">Loading {g.title}…</p>}
+              <iframe
+                ref={frame}
+                key={g.slug}
+                src={g.url}
+                title={g.title}
+                allow="fullscreen; autoplay; gamepad; clipboard-write"
+                allowFullScreen
+                onLoad={() => {
+                  setReady(true);
+                  frame.current?.focus();
+                }}
+              />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
