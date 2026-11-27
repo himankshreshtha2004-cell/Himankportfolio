@@ -28,7 +28,7 @@
    ========================================================================== */
 import { FILM } from "../content/timeline";
 
-type Tier = "hi" | "mid" | "tall";
+type Tier = "hi" | "hd" | "mid" | "tall";
 type TierInfo = { w: number; h: number; packs: number[][]; crop?: { x: number; w: number } };
 type Index = {
   frames: number;
@@ -45,6 +45,11 @@ const N = FILM.frames;
 const touch = typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
 const BUDGET = touch ? 300e6 : 650e6; // bytes of decoded frames kept
 const DECODES_AT_ONCE = touch ? 3 : 4;
+/** while the film rests, decode gently: it only prepares the next move and must not slow the page down */
+const DECODES_RESTING = 2;
+const RESTING_PLAN = 28; // decoded frames kept ready around a resting stop
+/** the canvas is never larger than this on its long side (the picture is stretched by CSS on bigger screens) */
+const CANVAS_MAX = 1920;
 const TALL_MAX_ASPECT = 0.5625; // 9:16 or narrower
 
 export class FilmPlayer {
@@ -104,13 +109,15 @@ export class FilmPlayer {
     if (cw / ch <= TALL_MAX_ASPECT && (!t || t.tall)) return "tall";
     const need = Math.max(cw, ch * (16 / 9));
     if (need <= 1700 && (!t || t.mid)) return "mid";
+    if (t?.hd) return "hd"; // 1920 px: what a laptop or a full-HD screen can show, at half the decode work of 2560
     return t && !t.hi ? ((Object.keys(t)[0] as Tier) ?? "hi") : "hi";
   }
 
   resize() {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const w = Math.round(window.innerWidth * dpr);
-    const h = Math.round(window.innerHeight * dpr);
+    const fit = Math.min(1, CANVAS_MAX / Math.max(window.innerWidth * dpr, window.innerHeight * dpr));
+    const w = Math.round(window.innerWidth * dpr * fit);
+    const h = Math.round(window.innerHeight * dpr * fit);
     if (this.canvas.width !== w || this.canvas.height !== h) {
       this.canvas.width = w;
       this.canvas.height = h;
@@ -198,7 +205,7 @@ export class FilmPlayer {
     const S = FILM.sheet;
     const per = S.cols * S.rows;
     const sheets = Math.ceil(N / per);
-    const scale = touch ? 0.5 : 0.75; // kept decoded at reduced size: they are only a fallback
+    const scale = 1; // the sheets are already stored at the size they are kept at: they are only a fallback
     let next = 0;
     const worker = async () => {
       while (next < sheets) {
@@ -206,14 +213,9 @@ export class FilmPlayer {
         try {
           const blob = await (await fetch(this.base + S.path(n))).blob();
           let img: Drawable;
-          let k = 1;
+          const k = scale;
           try {
-            const full = await createImageBitmap(blob);
-            const w = Math.round(full.width * scale);
-            const h = Math.round(full.height * scale);
-            img = await createImageBitmap(full, { resizeWidth: w, resizeHeight: h, resizeQuality: "medium" });
-            k = w / full.width;
-            full.close();
+            img = await createImageBitmap(blob);
           } catch {
             img = await this.decode(blob, false);
           }
@@ -235,9 +237,10 @@ export class FilmPlayer {
         } catch {
           /* a missing sheet falls back to neighbouring frames */
         }
+        await new Promise((r) => setTimeout(r, 80)); // let the page breathe between sheets
       }
     };
-    await Promise.all(Array.from({ length: 2 }, worker));
+    await worker();
   }
 
   /* ---------- 2. network ---------- */
@@ -435,7 +438,7 @@ export class FilmPlayer {
 
   private replan() {
     const c = Math.max(0, Math.min(N - 1, Math.round(this.center)));
-    const max = this.maxDecoded;
+    const max = this.dest === null ? Math.min(this.maxDecoded, RESTING_PLAN) : this.maxDecoded;
     const list: number[] = [];
     const seen = new Set<number>();
     const push = (i: number) => {
@@ -511,8 +514,9 @@ export class FilmPlayer {
 
   private pumpDecodes() {
     const dir = this.dest === null ? 0 : Math.sign(this.dest - this.center);
+    const atOnce = this.dest === null ? DECODES_RESTING : DECODES_AT_ONCE;
     for (const i of this.plan) {
-      if (this.decoding.size >= DECODES_AT_ONCE) return;
+      if (this.decoding.size >= atOnce) return;
       if (this.bmps[i] || !this.blobs[i] || this.decoding.has(i)) continue;
       if (dir !== 0 && (i - this.center) * dir < 0 && Math.abs(i - this.center) > 6) continue; // already passed
       if (!this.evict(this.decoding.size + 1)) return;

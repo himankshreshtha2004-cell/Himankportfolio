@@ -13,8 +13,8 @@ export const FILM = {
   height: 1080,
   /** sharp frames: packs of 24 WebP files back to back, f/<hi|mid>/<pack>.bin, byte lengths in this index */
   index: "f/index.json",
-  /** preview frames (480 × 270) packed 8 × 8 per sheet, 4 px gutter: f/p/<sheet>.webp */
-  sheet: { path: (n: number) => `f/p/${n}.webp`, cols: 8, rows: 8, w: 480, h: 270, gutter: 4 },
+  /** preview frames (360 × 203) packed 8 × 8 per sheet, 4 px gutter: f/p/<sheet>.webp */
+  sheet: { path: (n: number) => `f/p/${n}.webp`, cols: 8, rows: 8, w: 360, h: 202.5, gutter: 3 },
 };
 
 export type StopId =
